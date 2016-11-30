@@ -1,3 +1,5 @@
+// #define AVOID_OBSTACLE
+
 #include "DistanceSensor.h"
 #include "LineSensor.h"
 #include "Motors.h"
@@ -5,12 +7,15 @@
 
 #define LOG(x) if(true) Serial.print(x)
 
-DistanceSensor distanceSensor(2, 3);
-LineSensor lineSensor((byte[]){A1, A2, A3}, 3);
-Motors motors(5, 7, HIGH, 6, 8, HIGH);
-PID pid(0.1, 0.0, 0.0);
+#ifdef AVOID_OBSTACLE
+  DistanceSensor distanceSensor(2, 3);
+#endif
 
-int max_speed = 75; // Set max speed for the motors
+LineSensor lineSensor((byte[]){A1, A2}, 2);
+Motors motors(5, 7, HIGH, 6, 8, HIGH); 
+PID pid(0.175, 0.000, 0.1); //(P, I, D)
+
+int max_speed = 100; // Set max speed for the motors
 
 void setup() {
   
@@ -23,23 +28,27 @@ void setup() {
 
   // Set up the set point to PID controller
   // 500 because it's the center line value
-  pid.setSetPoint(1000);
+  pid.setSetPoint(500);
   
 }
 
 void loop() {
   
+#ifdef AVOID_OBSTACLE
   // Distance
   int distance_cm = distanceSensor.getDistance(); // Get distance from ultrasonic sensor
   LOG(distance_cm); LOG("\t"); // Log the distance value
   if (distance_cm < 5) { // Check if distance is less than 5 cm
     delay(100); // Debounce
     if (distance_cm < 5){ // Check if distance is than 5 cm again
+      motors.setSpeed(-50, -50); // Reverse the both motors for fast stop
+      delay(100); // Wait a time for action
       motors.setSpeed(0, 0); // Stop motors
       LOG("Finished!\n");
       while(1); // Infinite loop
     }
   }
+#endif
 
   // Line Position
   unsigned long line_position = lineSensor.getLine(false); // Get line position from line sensors
