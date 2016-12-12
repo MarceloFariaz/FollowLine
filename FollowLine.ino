@@ -4,8 +4,10 @@
 #include "LineSensor.h"
 #include "Motors.h"
 #include "PID.h"
+#include "Communication.h"
+#include <EEPROM.h>
 
-#define LOG(x) if(true) Serial.print(x)
+#define LOG(x) if(false) Serial.print(x)
 
 #ifdef AVOID_OBSTACLE
   DistanceSensor distanceSensor(2, 3);
@@ -13,9 +15,9 @@
 
 LineSensor lineSensor((byte[]){A1, A2}, 2);
 Motors motors(5, 7, HIGH, 6, 8, HIGH); 
-PID pid(0.175, 0.000, 0.1); //(P, I, D)
+PID pid(0.1300, 0.0000, 0.0700); //(P, I, D)
 
-int max_speed = 100; // Set max speed for the motors
+int max_speed = 95; // Set max speed for the motors
 
 void setup() {
   
@@ -41,8 +43,8 @@ void loop() {
   if (distance_cm < 5) { // Check if distance is less than 5 cm
     delay(100); // Debounce
     if (distance_cm < 5){ // Check if distance is than 5 cm again
-      motors.setSpeed(-50, -50); // Reverse the both motors for fast stop
-      delay(100); // Wait a time for action
+      motors.setSpeed(-50, -50);
+      delay(100);
       motors.setSpeed(0, 0); // Stop motors
       LOG("Finished!\n");
       while(1); // Infinite loop
@@ -51,7 +53,7 @@ void loop() {
 #endif
 
   // Line Position
-  unsigned long line_position = lineSensor.getLine(false); // Get line position from line sensors
+  unsigned long line_position = lineSensor.getLine(true); // Get line position from line sensors
   LOG(line_position); LOG("\t"); // Log the line position value
   
   // PIC Controller
@@ -75,7 +77,54 @@ void loop() {
   
 }
 
+void serialEvent() {
+  char data = Serial.read();
 
+  switch(data) {
+    case 'A':
+        pid.setKp(pid.getKp()+0.005);
+      break;
+      
+    case 'B':
+        pid.setKi(pid.getKi()+0.0005);
+      break;
+      
+    case 'C':
+        pid.setKd(pid.getKd()+0.005);
+      break;
+      
+    case 'D':
+        pid.setKp(pid.getKp()-0.005);
+      break;
+      
+    case 'E':
+        pid.setKi(pid.getKi()-0.0005);
+      break;
+      
+    case 'F':
+        pid.setKd(pid.getKd()-0.005);
+      break;
 
+    case 'G':
+        max_speed+=1;
+      break;
+      
+    case 'H':
+        max_speed-=1;
+      break;
+      
+    case 'I': 
+        
+      break;
+  }
+  printGains();
+  data = 0;
+}
 
-
+void printGains(){
+  Serial.print(pid.getKp(), 4); Serial.print("\t");
+  Serial.print(pid.getKi(), 4); Serial.print("\t");
+  Serial.print(pid.getKd(), 4); Serial.print("\t");
+  Serial.print(max_speed); Serial.print("\t");
+  Serial.println();
+}
