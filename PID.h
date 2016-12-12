@@ -25,6 +25,30 @@ public:
   void setSetPoint(double setPoint){
     this->setPoint = setPoint;
   }
+
+  void setKp(double kp){
+    this->kp = kp;
+  }
+  
+  void setKi(double ki){
+    this->ki = ki;
+  }
+  
+  void setKd(double kd){
+    this->kd = kd;
+  }
+
+  double getKp(){
+    return kp;
+  }
+  
+  double getKi(){
+    return ki;
+  }
+  
+  double getKd(){
+    return kd;
+  }
   
   double process(){
     error = setPoint - sample;
